@@ -151,6 +151,67 @@ Base URL:
 http://localhost:8000/api/v1/liff/auth
 ```
 
+### 5.0 ตัวอย่าง response ที่คาดหวัง
+
+ตัวอย่าง response สำหรับแต่ละ endpoint ของ LIFF Auth:
+
+#### POST /exchange
+
+```json
+{
+	"success": true,
+	"message": "เข้าสู่ระบบผ่าน LINE สำเร็จ",
+	"data": {
+		"accessToken": "...",
+		"refreshToken": "...",
+		"user": {
+			"userId": "usr_001",
+			"lineUserId": "U123",
+			"fullName": "Arm",
+			"role": "REPORTER"
+		}
+	}
+}
+```
+
+#### POST /refresh
+
+```json
+{
+	"success": true,
+	"message": "ต่ออายุ token สำเร็จ",
+	"data": {
+		"accessToken": "..."
+	}
+}
+```
+
+#### POST /logout
+
+```json
+{
+	"success": true,
+	"message": "ออกจากระบบสำเร็จ",
+	"data": null
+}
+```
+
+#### GET /me
+
+```json
+{
+	"success": true,
+	"message": "ดึงข้อมูลผู้ใช้สำเร็จ",
+	"data": {
+		"userId": "usr_001",
+		"fullName": "Arm",
+		"lineDisplayName": "Arm",
+		"role": "REPORTER",
+		"reporterType": "STUDENT"
+	}
+}
+```
+
 ### 5.1 POST exchange
 
 URL:
