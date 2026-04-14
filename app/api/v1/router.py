@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api.v1.admin import router as admin_router
 from app.api.v1.liff_auth import router as liff_auth_router
 from app.api.v1.notifications import router as notifications_router
 from app.api.v1.public import router as public_router
@@ -14,3 +15,4 @@ api_router.include_router(public_router, prefix="/public", tags=["Public"])
 api_router.include_router(reports_router, prefix="/reports", tags=["Reports"])
 api_router.include_router(tracking_router, prefix="/tracking", tags=["Tracking"])
 api_router.include_router(notifications_router, prefix="/notifications", tags=["Notifications"])
+api_router.include_router(admin_router, prefix="/admin", tags=["Admin"])

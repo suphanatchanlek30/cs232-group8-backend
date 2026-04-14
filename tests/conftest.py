@@ -142,3 +142,31 @@ def staff_auth_header(staff_user):
     """Bearer header for staff."""
     _, token, _ = staff_user
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture()
+def admin_user(db: Session):
+    """Create an ADMIN user and return (user, access_token)."""
+    user = User(
+        role=UserRole.ADMIN.value,
+        auth_provider=AuthProvider.LOCAL.value,
+        email=f"admin-{uuid.uuid4().hex[:6]}@tu.ac.th",
+        password_hash=hash_password("AdminPass1!"),
+        full_name="Test Admin",
+        is_active=True,
+    )
+    db.add(user)
+    db.flush()
+
+    token = create_access_token(
+        subject=str(user.id),
+        extra_data={"role": user.role, "auth_provider": user.auth_provider},
+    )
+    return user, token
+
+
+@pytest.fixture()
+def admin_auth_header(admin_user):
+    """Bearer header for admin."""
+    _, token = admin_user
+    return {"Authorization": f"Bearer {token}"}
