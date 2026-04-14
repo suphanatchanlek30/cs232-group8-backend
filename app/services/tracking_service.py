@@ -131,7 +131,6 @@ class TrackingService:
                 Report.linked_incident_id.isnot(None),
             )
             .distinct()
-            .subquery()
         )
 
         query = db.query(Incident).filter(Incident.id.in_(subq))
