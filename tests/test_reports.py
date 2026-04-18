@@ -19,7 +19,7 @@ class TestCreateReport:
         assert body["success"] is True
         data = body["data"]
         assert data["trackingCode"].startswith("TP-")
-        assert data["status"] in ("SUBMITTED", "LINKED")
+        assert data["status"] in ("SUBMITTED", "LINKED_TO_INCIDENT")
         assert data["candidateIncidentType"] == "waste_issue"
 
     def test_create_report_without_label(self, client, auth_header):

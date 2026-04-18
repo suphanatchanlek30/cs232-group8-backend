@@ -4,30 +4,34 @@ import pytest
 
 
 class TestAnalyticsAuthGuard:
-    """Analytics endpoints should be accessible without auth for now (no auth guard in router)."""
+    """Analytics endpoints are staff/admin only."""
 
     def test_kpi_summary_requires_dates(self, client):
         r = client.get("/api/v1/analytics/kpi-summary")
-        assert r.status_code == 422  # missing required query params
+        assert r.status_code == 403
 
     def test_incident_type_distribution_requires_dates(self, client):
         r = client.get("/api/v1/analytics/incident-type-distribution")
-        assert r.status_code == 422
+        assert r.status_code == 403
+
+    def test_reporter_rejected(self, client, auth_header):
+        r = client.get("/api/v1/analytics/kpi-summary", headers=auth_header)
+        assert r.status_code == 403
 
 
 class TestKpiSummary:
-    def test_kpi_summary_empty(self, client):
+    def test_kpi_summary_empty(self, client, staff_auth_header):
         r = client.get("/api/v1/analytics/kpi-summary", params={
             "dateFrom": "2020-01-01T00:00:00",
             "dateTo": "2020-12-31T23:59:59",
-        })
+        }, headers=staff_auth_header)
         assert r.status_code == 200
         data = r.json()["data"]
         assert data["totalReports"] == 0
         assert data["totalIncidents"] == 0
         assert data["fusionRate"] == 0
 
-    def test_kpi_summary_with_data(self, client, auth_header):
+    def test_kpi_summary_with_data(self, client, auth_header, staff_auth_header):
         # create a report with label => creates incident
         client.post("/api/v1/reports", json={
             "sourceChannel": "LIFF",
@@ -38,7 +42,7 @@ class TestKpiSummary:
         r = client.get("/api/v1/analytics/kpi-summary", params={
             "dateFrom": "2020-01-01T00:00:00",
             "dateTo": "2099-12-31T23:59:59",
-        })
+        }, headers=staff_auth_header)
         assert r.status_code == 200
         data = r.json()["data"]
         assert data["totalReports"] >= 1
@@ -46,16 +50,16 @@ class TestKpiSummary:
 
 
 class TestIncidentTypeDistribution:
-    def test_distribution_empty(self, client):
+    def test_distribution_empty(self, client, staff_auth_header):
         r = client.get("/api/v1/analytics/incident-type-distribution", params={
             "dateFrom": "2020-01-01T00:00:00",
             "dateTo": "2020-12-31T23:59:59",
-        })
+        }, headers=staff_auth_header)
         assert r.status_code == 200
         data = r.json()["data"]
         assert isinstance(data, list)
 
-    def test_distribution_with_data(self, client, auth_header):
+    def test_distribution_with_data(self, client, auth_header, staff_auth_header):
         client.post("/api/v1/reports", json={
             "sourceChannel": "LIFF",
             "reportText": "ท่อแตก",
@@ -65,7 +69,7 @@ class TestIncidentTypeDistribution:
         r = client.get("/api/v1/analytics/incident-type-distribution", params={
             "dateFrom": "2020-01-01T00:00:00",
             "dateTo": "2099-12-31T23:59:59",
-        })
+        }, headers=staff_auth_header)
         assert r.status_code == 200
         data = r.json()["data"]
         assert len(data) >= 1
@@ -73,39 +77,39 @@ class TestIncidentTypeDistribution:
 
 
 class TestHotspotLocations:
-    def test_hotspots_empty(self, client):
+    def test_hotspots_empty(self, client, staff_auth_header):
         r = client.get("/api/v1/analytics/hotspot-locations", params={
             "dateFrom": "2020-01-01T00:00:00",
             "dateTo": "2020-12-31T23:59:59",
-        })
+        }, headers=staff_auth_header)
         assert r.status_code == 200
         data = r.json()["data"]
         assert isinstance(data, list)
 
 
 class TestPeakTimeAnalysis:
-    def test_peak_time_empty(self, client):
+    def test_peak_time_empty(self, client, staff_auth_header):
         r = client.get("/api/v1/analytics/peak-time-analysis", params={
             "dateFrom": "2020-01-01T00:00:00",
             "dateTo": "2020-12-31T23:59:59",
-        })
+        }, headers=staff_auth_header)
         assert r.status_code == 200
         data = r.json()["data"]
         assert isinstance(data, list)
 
 
 class TestFusionStatistics:
-    def test_fusion_stats_empty(self, client):
+    def test_fusion_stats_empty(self, client, staff_auth_header):
         r = client.get("/api/v1/analytics/fusion-statistics", params={
             "dateFrom": "2020-01-01T00:00:00",
             "dateTo": "2020-12-31T23:59:59",
-        })
+        }, headers=staff_auth_header)
         assert r.status_code == 200
         data = r.json()["data"]
         assert data["totalReports"] == 0
         assert data["fusionRate"] == 0
 
-    def test_fusion_stats_with_data(self, client, auth_header):
+    def test_fusion_stats_with_data(self, client, auth_header, staff_auth_header):
         client.post("/api/v1/reports", json={
             "sourceChannel": "LIFF",
             "reportText": "ไฟไหม้",
@@ -115,23 +119,23 @@ class TestFusionStatistics:
         r = client.get("/api/v1/analytics/fusion-statistics", params={
             "dateFrom": "2020-01-01T00:00:00",
             "dateTo": "2099-12-31T23:59:59",
-        })
+        }, headers=staff_auth_header)
         assert r.status_code == 200
         data = r.json()["data"]
         assert data["totalReports"] >= 1
 
 
 class TestStatusOverview:
-    def test_status_overview_empty(self, client):
+    def test_status_overview_empty(self, client, staff_auth_header):
         r = client.get("/api/v1/analytics/status-overview", params={
             "dateFrom": "2020-01-01T00:00:00",
             "dateTo": "2020-12-31T23:59:59",
-        })
+        }, headers=staff_auth_header)
         assert r.status_code == 200
         data = r.json()["data"]
         assert isinstance(data, list)
 
-    def test_status_overview_with_data(self, client, auth_header):
+    def test_status_overview_with_data(self, client, auth_header, staff_auth_header):
         client.post("/api/v1/reports", json={
             "sourceChannel": "LIFF",
             "reportText": "เหตุการณ์ความปลอดภัย",
@@ -141,7 +145,7 @@ class TestStatusOverview:
         r = client.get("/api/v1/analytics/status-overview", params={
             "dateFrom": "2020-01-01T00:00:00",
             "dateTo": "2099-12-31T23:59:59",
-        })
+        }, headers=staff_auth_header)
         assert r.status_code == 200
         data = r.json()["data"]
         assert len(data) >= 1

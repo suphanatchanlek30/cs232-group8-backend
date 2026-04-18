@@ -142,6 +142,12 @@ class AuthService:
                 detail="User not found or inactive",
             )
 
+        if user.role != UserRole.REPORTER.value:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only reporter can use this endpoint",
+            )
+
         access_token = create_access_token(
             subject=str(user.id),
             extra_data={
@@ -177,6 +183,19 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid refresh token",
+            )
+
+        user = db.query(User).filter(User.id == user_id, User.is_active.is_(True)).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found or inactive",
+            )
+
+        if user.role != UserRole.REPORTER.value:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only reporter can use this endpoint",
             )
 
         token_row.revoked_at = datetime.now(timezone.utc)

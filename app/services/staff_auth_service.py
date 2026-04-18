@@ -227,6 +227,21 @@ class StaffAuthService:
                 detail="Invalid refresh token",
             )
 
+        user = (
+            db.query(User)
+            .filter(
+                User.id == user_id,
+                User.is_active.is_(True),
+                User.role.in_([UserRole.STAFF.value, UserRole.ADMIN.value]),
+            )
+            .first()
+        )
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found or inactive",
+            )
+
         token_row.revoked_at = datetime.now(timezone.utc)
         db.commit()
 

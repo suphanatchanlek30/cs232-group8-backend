@@ -189,7 +189,7 @@ class ReportService:
 
         if incident:
             report.linked_incident_id = incident.id
-            report.report_status = ReportStatus.LINKED.value
+            report.report_status = ReportStatus.LINKED_TO_INCIDENT.value
 
             link = IncidentReport(
                 incident_id=incident.id,
@@ -270,7 +270,7 @@ class ReportService:
 
         if incident:
             report.linked_incident_id = incident.id
-            report.report_status = ReportStatus.LINKED.value
+            report.report_status = ReportStatus.LINKED_TO_INCIDENT.value
             link = IncidentReport(
                 incident_id=incident.id,
                 report_id=report.id,

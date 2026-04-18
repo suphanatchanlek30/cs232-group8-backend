@@ -35,14 +35,17 @@ class IncidentLabel(str, Enum):
 
 class ReportStatus(str, Enum):
     SUBMITTED = "SUBMITTED"
-    PROCESSING = "PROCESSING"
-    LINKED = "LINKED"
-    REJECTED = "REJECTED"
+    NORMALIZED = "NORMALIZED"
+    ANALYZED = "ANALYZED"
+    LINKED_TO_INCIDENT = "LINKED_TO_INCIDENT"
+    FAILED = "FAILED"
 
 
 class IncidentStatus(str, Enum):
     NEW = "NEW"
     IN_REVIEW = "IN_REVIEW"
+    ROUTED = "ROUTED"
     IN_PROGRESS = "IN_PROGRESS"
     RESOLVED = "RESOLVED"
     CLOSED = "CLOSED"
+    REJECTED = "REJECTED"

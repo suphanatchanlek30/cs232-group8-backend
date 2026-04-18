@@ -33,14 +33,16 @@ from app.schemas.report import ReportAttachmentOut, ReportDetailResponseData, Re
 
 # Valid state transitions
 VALID_TRANSITIONS: dict[str, list[str]] = {
-    IncidentStatus.NEW.value: [IncidentStatus.IN_REVIEW.value, IncidentStatus.IN_PROGRESS.value],
-    IncidentStatus.IN_REVIEW.value: [IncidentStatus.IN_PROGRESS.value, IncidentStatus.RESOLVED.value],
+    IncidentStatus.NEW.value: [IncidentStatus.IN_REVIEW.value, IncidentStatus.ROUTED.value],
+    IncidentStatus.IN_REVIEW.value: [IncidentStatus.ROUTED.value, IncidentStatus.IN_PROGRESS.value, IncidentStatus.REJECTED.value],
+    IncidentStatus.ROUTED.value: [IncidentStatus.IN_PROGRESS.value, IncidentStatus.REJECTED.value],
     IncidentStatus.IN_PROGRESS.value: [IncidentStatus.RESOLVED.value, IncidentStatus.IN_REVIEW.value],
     IncidentStatus.RESOLVED.value: [IncidentStatus.CLOSED.value, IncidentStatus.IN_PROGRESS.value],
     IncidentStatus.CLOSED.value: [],
+    IncidentStatus.REJECTED.value: [],
 }
 
-VALID_SEVERITIES = {"LOW", "MEDIUM", "HIGH", "CRITICAL"}
+VALID_SEVERITIES = {"LOW", "MEDIUM", "HIGH"}
 
 
 def _get_incident_or_404(db: Session, incident_id: str) -> Incident:

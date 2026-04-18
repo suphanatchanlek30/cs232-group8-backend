@@ -10,15 +10,26 @@ from app.models.report import Report
 class AnalyticsService:
 
     @staticmethod
+    def _between_or_all(query, column, date_from, date_to):
+        if date_from and date_to:
+            return query.filter(column.between(date_from, date_to))
+        if date_from:
+            return query.filter(column >= date_from)
+        if date_to:
+            return query.filter(column <= date_to)
+        return query
+
+    @staticmethod
     def get_kpi_summary(db: Session, date_from, date_to, unit_id=None):
         total_reports = (
-            db.query(func.count(Report.id))
-            .filter(Report.submitted_at.between(date_from, date_to))
+            AnalyticsService._between_or_all(
+                db.query(func.count(Report.id)), Report.submitted_at, date_from, date_to,
+            )
             .scalar()
         ) or 0
 
-        inc_query = db.query(Incident).filter(
-            Incident.first_report_time.between(date_from, date_to)
+        inc_query = AnalyticsService._between_or_all(
+            db.query(Incident), Incident.first_report_time, date_from, date_to,
         )
         if unit_id:
             inc_query = inc_query.filter(Incident.assigned_unit_id == unit_id)
@@ -38,12 +49,14 @@ class AnalyticsService:
 
     @staticmethod
     def get_incident_type_distribution(db: Session, date_from, date_to):
+        query = db.query(
+            Incident.incident_type.label("incidentType"),
+            func.count().label("count"),
+        )
         rows = (
-            db.query(
-                Incident.incident_type.label("incidentType"),
-                func.count().label("count"),
+            AnalyticsService._between_or_all(
+                query, Incident.first_report_time, date_from, date_to,
             )
-            .filter(Incident.first_report_time.between(date_from, date_to))
             .group_by(Incident.incident_type)
             .all()
         )
@@ -51,16 +64,16 @@ class AnalyticsService:
 
     @staticmethod
     def get_hotspots(db: Session, date_from, date_to, limit):
+        query = db.query(
+            Incident.location_name_snapshot.label("locationName"),
+            func.count().label("incidentCount"),
+            Incident.lat,
+            Incident.lng,
+        ).filter(Incident.location_name_snapshot.isnot(None))
+
         rows = (
-            db.query(
-                Incident.location_name_snapshot.label("locationName"),
-                func.count().label("incidentCount"),
-                Incident.lat,
-                Incident.lng,
-            )
-            .filter(
-                Incident.first_report_time.between(date_from, date_to),
-                Incident.location_name_snapshot.isnot(None),
+            AnalyticsService._between_or_all(
+                query, Incident.first_report_time, date_from, date_to,
             )
             .group_by(Incident.location_name_snapshot, Incident.lat, Incident.lng)
             .order_by(func.count().desc())
@@ -78,13 +91,26 @@ class AnalyticsService:
         ]
 
     @staticmethod
-    def get_peak_time(db: Session, date_from, date_to):
-        rows = (
-            db.query(
-                func.extract("hour", Report.submitted_at).label("hour"),
+    def get_peak_time(db: Session, date_from, date_to, group_by: str = "hour"):
+        if group_by == "day":
+            query = db.query(
+                func.extract("dow", Report.submitted_at).label("day"),
                 func.count().label("count"),
             )
-            .filter(Report.submitted_at.between(date_from, date_to))
+            rows = (
+                AnalyticsService._between_or_all(query, Report.submitted_at, date_from, date_to)
+                .group_by("day")
+                .order_by("day")
+                .all()
+            )
+            return [{"day": int(r.day), "count": r.count} for r in rows]
+
+        query = db.query(
+            func.extract("hour", Report.submitted_at).label("hour"),
+            func.count().label("count"),
+        )
+        rows = (
+            AnalyticsService._between_or_all(query, Report.submitted_at, date_from, date_to)
             .group_by("hour")
             .order_by("hour")
             .all()
@@ -94,14 +120,16 @@ class AnalyticsService:
     @staticmethod
     def get_fusion_stats(db: Session, date_from, date_to):
         total_reports = (
-            db.query(func.count(Report.id))
-            .filter(Report.submitted_at.between(date_from, date_to))
+            AnalyticsService._between_or_all(
+                db.query(func.count(Report.id)), Report.submitted_at, date_from, date_to,
+            )
             .scalar()
         ) or 0
 
         total_incidents = (
-            db.query(func.count(Incident.id))
-            .filter(Incident.first_report_time.between(date_from, date_to))
+            AnalyticsService._between_or_all(
+                db.query(func.count(Incident.id)), Incident.first_report_time, date_from, date_to,
+            )
             .scalar()
         ) or 0
 
@@ -117,12 +145,14 @@ class AnalyticsService:
 
     @staticmethod
     def get_status_overview(db: Session, date_from, date_to):
+        query = db.query(
+            Incident.status,
+            func.count().label("count"),
+        )
         rows = (
-            db.query(
-                Incident.status,
-                func.count().label("count"),
+            AnalyticsService._between_or_all(
+                query, Incident.first_report_time, date_from, date_to,
             )
-            .filter(Incident.first_report_time.between(date_from, date_to))
             .group_by(Incident.status)
             .all()
         )
