@@ -29,3 +29,33 @@ def get_dashboard_summary(
         message="ดึงข้อมูลสรุป dashboard สำเร็จ",
         data=data,
     )
+
+
+@router.get("/metadata", response_model=ApiResponse)
+def get_dashboard_metadata(
+    user=Depends(get_current_staff),
+    db: Session = Depends(get_db),
+):
+    """Get metadata for dashboard (units, status options, etc)."""
+    # Import here to avoid circular imports if any
+    from app.services.admin_service import AdminService
+    
+    units = AdminService.list_units(db, page=1, page_size=100)
+    
+    status_options = [
+        {"value": "NEW", "label": "ใหม่"},
+        {"value": "IN_REVIEW", "label": "กำลังตรวจสอบ"},
+        {"value": "ROUTED", "label": "ส่งต่อแล้ว"},
+        {"value": "IN_PROGRESS", "label": "กำลังดำเนินการ"},
+        {"value": "RESOLVED", "label": "เสร็จสิ้น"},
+        {"value": "REJECTED", "label": "ปฏิเสธ/ไม่เกี่ยวข้อง"},
+    ]
+    
+    return ApiResponse(
+        success=True,
+        message="ดึงข้อมูล metadata สำเร็จ",
+        data={
+            "units": units["items"],
+            "statusOptions": status_options
+        },
+    )
