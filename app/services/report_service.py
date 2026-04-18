@@ -95,6 +95,7 @@ def _find_or_create_incident(
         lng=report.lng,
         location_id=report.location_id,
         location_name_snapshot=report.location_name_snapshot,
+        location_note=report.location_note,
         created_by_system=True,
     )
     db.add(incident)
@@ -223,6 +224,7 @@ class ReportService:
         label: str | None,
         occurred_at: datetime | None,
         location_name: str | None,
+        location_note: str | None,
         lat: float | None,
         lng: float | None,
         image_urls: list[str],
@@ -241,6 +243,7 @@ class ReportService:
             candidate_incident_type=label,
             occurred_at=occurred_at,
             location_name_snapshot=location_name,
+            location_note=location_note,
             lat=lat,
             lng=lng,
             report_status=ReportStatus.SUBMITTED.value,

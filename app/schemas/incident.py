@@ -25,6 +25,8 @@ class IncidentListItem(BaseModel):
     status: str
     reportCount: int
     assignedUnitName: str | None = None
+    locationName: str | None = None
+    locationNote: str | None = None
     firstReportTime: datetime
     latestReportTime: datetime
 
@@ -50,6 +52,7 @@ class IncidentDetailResponseData(BaseModel):
     assignedUnitId: str | None = None
     assignedUnitName: str | None = None
     locationName: str | None = None
+    locationNote: str | None = None
     lat: float | None = None
     lng: float | None = None
     firstReportTime: datetime

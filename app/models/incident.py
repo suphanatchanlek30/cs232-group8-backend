@@ -30,6 +30,7 @@ class Incident(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     location_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("locations.id"), nullable=True)
     location_name_snapshot: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    location_note: Mapped[str | None] = mapped_column(String(255), nullable=True)
     lat: Mapped[float | None] = mapped_column(Numeric(10, 7), nullable=True)
     lng: Mapped[float | None] = mapped_column(Numeric(10, 7), nullable=True)
 

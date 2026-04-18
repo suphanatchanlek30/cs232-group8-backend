@@ -135,6 +135,8 @@ class IncidentService:
                     status=inc.status,
                     reportCount=inc.report_count,
                     assignedUnitName=_get_unit_name(db, inc.assigned_unit_id),
+                    locationName=inc.location_name_snapshot,
+                    locationNote=inc.location_note,
                     firstReportTime=inc.first_report_time,
                     latestReportTime=inc.latest_report_time,
                 )
@@ -169,6 +171,7 @@ class IncidentService:
             assignedUnitId=str(incident.assigned_unit_id) if incident.assigned_unit_id else None,
             assignedUnitName=unit_name,
             locationName=incident.location_name_snapshot,
+            locationNote=incident.location_note,
             lat=float(incident.lat) if incident.lat is not None else None,
             lng=float(incident.lng) if incident.lng is not None else None,
             firstReportTime=incident.first_report_time,
