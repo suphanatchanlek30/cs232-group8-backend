@@ -7,10 +7,17 @@ from app.core.config import settings
 class LineService:
     @staticmethod
     def verify_id_token(id_token: str) -> dict:
-        if settings.LINE_VERIFY_MODE.lower() == "mock":
+        mode = settings.LINE_VERIFY_MODE.lower().strip()
+        if mode == "mock":
             return LineService._verify_mock_token(id_token)
 
-        return LineService._verify_real_token(id_token)
+        if mode == "real":
+            return LineService._verify_real_token(id_token)
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="LINE_VERIFY_MODE must be 'mock' or 'real'",
+        )
 
     @staticmethod
     def _verify_mock_token(id_token: str) -> dict:

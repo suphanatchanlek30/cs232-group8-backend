@@ -27,9 +27,18 @@ class Settings(BaseSettings):
     LINE_CHANNEL_SECRET: str | None = None
     LINE_LIFF_ID: str | None = None
 
+    CORS_ALLOW_ORIGINS: str = "*"
+
     AUTO_CREATE_TABLES: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+
+    @property
+    def cors_allow_origins_list(self) -> list[str]:
+        raw = (self.CORS_ALLOW_ORIGINS or "").strip()
+        if not raw:
+            return []
+        return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
 
 settings = Settings()

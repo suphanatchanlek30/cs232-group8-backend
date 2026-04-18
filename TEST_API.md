@@ -118,12 +118,15 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Body ตัวอย่าง:
 ```json
 {
-  "idToken": "mock-line-token-testuser001",
+  "idToken": "LINE_ID_TOKEN_FROM_LIFF",
   "displayName": "Arm",
   "pictureUrl": "https://profile.line/abc.jpg"
 }
 ```
-- วิธีทดสอบใน Postman: ส่ง body ตามตัวอย่าง แล้วเก็บ token ลง environment
+- วิธีทดสอบใน Postman (โหมดจริง):
+  - ต้องเอา `idToken` มาจาก LIFF frontend จริงก่อน
+  - จากนั้นค่อยส่ง body ตามตัวอย่าง
+  - ถ้าสำเร็จให้เก็บ `accessToken` และ `refreshToken` ลง Postman environment
 - Expected Status Code: `200`
 - Expected Response ตัวอย่าง:
 ```json
@@ -142,7 +145,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
   }
 }
 ```
-- หมายเหตุ: ในโหมด `LINE_VERIFY_MODE=mock` ต้องขึ้นต้น `mock-line-token-`
+- หมายเหตุ: โหมดจริง (`LINE_VERIFY_MODE=real`) จะ verify กับ LINE API โดยใช้ `LINE_CHANNEL_ID`
 
 3. **LIFF Refresh**
 - Method: `POST`
