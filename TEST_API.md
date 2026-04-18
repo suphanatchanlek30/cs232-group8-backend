@@ -261,8 +261,18 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
   "refreshToken": "{{staffRefreshToken}}"
 }
 ```
+- วิธีทดสอบใน Postman: ส่ง body พร้อม refresh token ของ staff/admin ที่ login สำเร็จ
 - Expected Status Code: `200`
-- Expected Response: `{ success, message, data.accessToken }`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ต่ออายุ token สำเร็จ",
+  "data": {
+    "accessToken": "..."
+  }
+}
+```
 
 8. **Staff Logout**
 - Method: `POST`
@@ -275,39 +285,122 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
   "refreshToken": "{{staffRefreshToken}}"
 }
 ```
+- วิธีทดสอบใน Postman: ส่ง refresh token เดิม แล้วลองยิง refresh อีกครั้งควรไม่ผ่าน
 - Expected Status Code: `200`
-- Expected Response: `{ success: true, message: "ออกจากระบบสำเร็จ", data: null }`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ออกจากระบบสำเร็จ",
+  "data": null
+}
+```
 
 9. **Staff Me**
 - Method: `GET`
 - URL: `{{baseUrl}}/staff/auth/me`
 - Role: Authenticated Staff/Admin
 - Headers: `Authorization: Bearer {{staffAccessToken}}`
+- วิธีทดสอบใน Postman: ใช้ access token ที่ได้จาก staff login
 - Expected Status Code: `200`
-- Expected Response: มี `permissions` array
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงข้อมูลผู้ใช้สำเร็จ",
+  "data": {
+    "userId": "...",
+    "fullName": "Somying Jaidee",
+    "email": "security@tu.ac.th",
+    "role": "STAFF",
+    "unit": {
+      "unitId": "...",
+      "name": "Security"
+    },
+    "permissions": [
+      "incident.read",
+      "incident.update_status"
+    ]
+  }
+}
+```
 
 ### 7.4 Public
 10. **Public System Info**
 - Method: `GET`
 - URL: `{{baseUrl}}/public/system-info`
 - Role: Public
+- วิธีทดสอบใน Postman: ส่ง request ตรงโดยไม่ต้องใส่ token
 - Expected Status Code: `200`
-- Expected Response fields: `systemName`, `projectNameEn`, `allowReportSubmission`, `version`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงข้อมูลระบบสำเร็จ",
+  "data": {
+    "systemName": "TU Pulse",
+    "projectNameEn": "Campus Incident Intelligence Platform",
+    "allowReportSubmission": true,
+    "version": "v1"
+  }
+}
+```
 
 11. **Public Report Options**
 - Method: `GET`
 - URL: `{{baseUrl}}/public/report-options`
 - Role: Public
+- วิธีทดสอบใน Postman: ส่ง request ตรงโดยไม่ต้องใส่ token
 - Expected Status Code: `200`
-- Expected Response fields: `incidentLabels`, `reporterTypes`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงตัวเลือกฟอร์มสำเร็จ",
+  "data": {
+    "incidentLabels": [
+      "fire_smoke",
+      "water_leak",
+      "waste_issue",
+      "facility_issue",
+      "security_issue"
+    ],
+    "reporterTypes": ["STUDENT", "STAFF", "VISITOR"]
+  }
+}
+```
 
 12. **Public Locations**
 - Method: `GET`
 - URL: `{{baseUrl}}/public/locations`
 - Role: Public
 - Query Params: `search`, `page`, `pageSize`
+- วิธีทดสอบใน Postman: ลอง `?page=1&pageSize=5` หรือ `?search=LC`
 - Expected Status Code: `200`
-- Expected Response: paginated `items + pagination`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงรายการสถานที่สำเร็จ",
+  "data": {
+    "items": [
+      {
+        "locationId": "...",
+        "locationName": "หน้าตึก LC",
+        "buildingCode": "LC",
+        "lat": 14.072,
+        "lng": 100.601
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "pageSize": 5,
+      "totalItems": 1,
+      "totalPages": 1
+    }
+  }
+}
+```
 
 ### 7.5 Reports
 13. **Create Report (JSON)**
@@ -362,8 +455,44 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Role: Authenticated Reporter
 - Headers: `Authorization: Bearer {{reporterAccessToken}}`
 - Body (form-data): `reportText`, `voiceText`, `label`, `occurredAt`, `locationName`, `lat`, `lng`, `images[]`
+- ตัวอย่างค่าที่แนะนำใน Postman:
+  - `reportText` = `มีขยะล้นหน้าตึก LC`
+  - `voiceText` = `(ปล่อยว่างได้)`
+  - `label` = `waste_issue`
+  - `occurredAt` = `2026-04-12T20:10:00+07:00`
+  - `locationName` = `หน้าตึก LC`
+  - `lat` = `14.072`
+  - `lng` = `100.601`
+  - `images` (ชนิด File) = เลือกไฟล์รูปอย่างน้อย 1 ไฟล์
+- วิธีใส่หลายไฟล์ใน `images[]`:
+  - เพิ่มแถวใหม่ด้วย key เดิมคือ `images`
+  - เปลี่ยน type ของแต่ละแถวเป็น `File`
+  - เลือกไฟล์รูปทีละไฟล์
+- วิธีทดสอบใน Postman:
+  - สร้าง request ใหม่และเลือก Body เป็น `form-data`
+  - กรอกค่าตามตัวอย่างด้านบน
+  - ตรวจว่า header `Authorization` เป็น Bearer token ของ Reporter
+  - กด Send
 - Expected Status Code: `201`
 - Expected Response: shape เดียวกับ create JSON
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ส่งรายงานแจ้งเหตุสำเร็จ",
+  "data": {
+    "reportId": "d9d8a2d9-4d67-4f6e-9a16-4f31f2a8d2b3",
+    "trackingCode": "TP-20260418-AB12",
+    "incidentId": "2f9f0c53-4d9b-4a18-a9f8-45e2d7ea45bc",
+    "isMerged": false,
+    "status": "LINKED_TO_INCIDENT",
+    "candidateIncidentType": "waste_issue"
+  }
+}
+```
+- หมายเหตุเพิ่มเติม:
+  - ถ้าไม่ส่ง `label` ระบบอาจตอบ `incidentId = null` และ `status = SUBMITTED`
+  - endpoint นี้เป็น prototype ฝั่งไฟล์แนบ ปัจจุบันใช้ URL จำลองตาม implementation ปัจจุบัน
 
 15. **Get My Reports**
 - Method: `GET`
@@ -371,24 +500,84 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Role: Authenticated Reporter
 - Headers: `Authorization: Bearer {{reporterAccessToken}}`
 - Query Params: `page`, `pageSize`, `status`
+- วิธีทดสอบใน Postman: ยิงหลังจากสร้าง report แล้วอย่างน้อย 1 รายการ
 - Expected Status Code: `200`
-- Expected Response: paginated reports
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงรายงานของคุณสำเร็จ",
+  "data": {
+    "items": [
+      {
+        "reportId": "...",
+        "trackingCode": "TP-...",
+        "reportText": "มีขยะล้นหน้าตึก LC",
+        "candidateIncidentType": "waste_issue",
+        "status": "LINKED_TO_INCIDENT"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "pageSize": 20,
+      "totalItems": 1,
+      "totalPages": 1
+    }
+  }
+}
+```
 
 16. **Get Report Detail**
 - Method: `GET`
 - URL: `{{baseUrl}}/reports/{{reportId}}`
 - Role: Reporter owner หรือ Staff/Admin
 - Headers: `Authorization: Bearer {{reporterAccessToken}}` หรือ `{{staffAccessToken}}`
+- วิธีทดสอบใน Postman: ใช้ `reportId` ที่ได้จาก create report
 - Expected Status Code: `200`
-- Expected Response fields: `reportText`, `voiceText`, `detectedLabels`, `linkedIncidentId`, `attachments`, `submittedAt`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงรายละเอียดรายงานสำเร็จ",
+  "data": {
+    "reportId": "...",
+    "trackingCode": "TP-...",
+    "reportText": "มีขยะล้นหน้าตึก LC",
+    "voiceText": null,
+    "normalizedText": "มีขยะล้นหน้าตึก LC",
+    "detectedLabels": ["waste_issue"],
+    "candidateIncidentType": "waste_issue",
+    "linkedIncidentId": "...",
+    "attachments": [],
+    "submittedAt": "..."
+  }
+}
+```
 
 ### 7.6 Tracking
 17. **Track by Code**
 - Method: `GET`
 - URL: `{{baseUrl}}/tracking/{{trackingCode}}`
 - Role: Public
+- วิธีทดสอบใน Postman: ใช้ `trackingCode` ที่ได้จาก create report
 - Expected Status Code: `200`
-- Expected Response fields: `trackingCode`, `reportId`, `incidentId`, `incidentType`, `status`, `severity`, `assignedUnit`, `latestUpdatedAt`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงสถานะการแจ้งเหตุสำเร็จ",
+  "data": {
+    "trackingCode": "TP-...",
+    "reportId": "...",
+    "incidentId": "...",
+    "incidentType": "waste_issue",
+    "status": "NEW",
+    "severity": "LOW",
+    "assignedUnit": null,
+    "latestUpdatedAt": "..."
+  }
+}
+```
 
 18. **My Incidents**
 - Method: `GET`
@@ -396,15 +585,56 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Role: Authenticated Reporter
 - Headers: `Authorization: Bearer {{reporterAccessToken}}`
 - Query Params: `page`, `pageSize`
+- วิธีทดสอบใน Postman: ส่งหลังจาก reporter มี report ที่ถูกลิงก์ incident แล้ว
 - Expected Status Code: `200`
-- Expected Response: paginated incidents
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงรายการเหตุการณ์ของคุณสำเร็จ",
+  "data": {
+    "items": [
+      {
+        "incidentId": "...",
+        "incidentCode": "INC-...",
+        "incidentType": "waste_issue",
+        "severity": "LOW",
+        "status": "NEW",
+        "reportCount": 1
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "pageSize": 20,
+      "totalItems": 1,
+      "totalPages": 1
+    }
+  }
+}
+```
 
 19. **Tracking Timeline**
 - Method: `GET`
 - URL: `{{baseUrl}}/tracking/{{trackingCode}}/timeline`
 - Role: Public
+- วิธีทดสอบใน Postman: ใช้ `trackingCode` เดิมกับ track-by-code
 - Expected Status Code: `200`
-- Expected Response: `data.timeline[]` (มี `status`, `changedAt`, `note`)
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงไทม์ไลน์สำเร็จ",
+  "data": {
+    "timeline": [
+      {
+        "status": "SUBMITTED",
+        "changedAt": "...",
+        "note": "Report submitted"
+      }
+    ]
+  }
+}
+```
 
 ### 7.7 Dashboard
 20. **Dashboard Summary**
@@ -413,8 +643,23 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Role: Staff/Admin
 - Headers: `Authorization: Bearer {{staffAccessToken}}`
 - Query Params: `dateFrom`, `dateTo`, `unitId`
+- วิธีทดสอบใน Postman: ใช้ staff/admin token แล้วยิงตรง หรือใส่ช่วงเวลา
 - Expected Status Code: `200`
-- Expected Response fields: `totalIncidents`, `newCount`, `inReviewCount`, `inProgressCount`, `resolvedCount`, `highSeverityCount`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงข้อมูลสรุป dashboard สำเร็จ",
+  "data": {
+    "totalIncidents": 5,
+    "newCount": 1,
+    "inReviewCount": 1,
+    "inProgressCount": 2,
+    "resolvedCount": 1,
+    "highSeverityCount": 1
+  }
+}
+```
 
 ### 7.8 Incidents (Dashboard + Actions)
 21. **List Incidents**
@@ -423,15 +668,55 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Role: Staff/Admin
 - Headers: `Authorization: Bearer {{staffAccessToken}}`
 - Query Params: `page`, `pageSize`, `status`, `severity`, `incidentType`, `assignedUnitId`, `search`, `dateFrom`, `dateTo`, `sortBy`, `sortOrder`
+- วิธีทดสอบใน Postman: เริ่มจาก `?page=1&pageSize=10` แล้วค่อยเพิ่ม filter
 - Expected Status Code: `200`
-- Expected Response: paginated incidents
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงรายการ incident สำเร็จ",
+  "data": {
+    "items": [
+      {
+        "incidentId": "...",
+        "incidentCode": "INC-...",
+        "incidentType": "waste_issue",
+        "severity": "LOW",
+        "status": "NEW"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "pageSize": 10,
+      "totalItems": 1,
+      "totalPages": 1
+    }
+  }
+}
+```
 
 22. **Incident Detail**
 - Method: `GET`
 - URL: `{{baseUrl}}/incidents/{{incidentId}}`
 - Role: Staff/Admin
 - Headers: `Authorization: Bearer {{staffAccessToken}}`
+- วิธีทดสอบใน Postman: ใช้ `incidentId` จาก list incidents หรือ create report
 - Expected Status Code: `200`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงรายละเอียด incident สำเร็จ",
+  "data": {
+    "incidentId": "...",
+    "incidentCode": "INC-...",
+    "incidentType": "waste_issue",
+    "severity": "LOW",
+    "confidence": "LOW",
+    "status": "NEW"
+  }
+}
+```
 
 23. **Incident Reports**
 - Method: `GET`
@@ -439,14 +724,55 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Role: Staff/Admin
 - Headers: `Authorization: Bearer {{staffAccessToken}}`
 - Query Params: `page`, `pageSize`
+- วิธีทดสอบใน Postman: ใช้ incident ที่มี linked report อยู่แล้ว
 - Expected Status Code: `200`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงรายงานใน incident สำเร็จ",
+  "data": {
+    "items": [
+      {
+        "reportId": "...",
+        "trackingCode": "TP-...",
+        "status": "LINKED_TO_INCIDENT"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "pageSize": 20,
+      "totalItems": 1,
+      "totalPages": 1
+    }
+  }
+}
+```
 
 24. **Incident Timeline**
 - Method: `GET`
 - URL: `{{baseUrl}}/incidents/{{incidentId}}/timeline`
 - Role: Staff/Admin
 - Headers: `Authorization: Bearer {{staffAccessToken}}`
+- วิธีทดสอบใน Postman: ใช้ incident ที่เพิ่งถูกสร้าง แล้วจะเห็น timeline อย่างน้อย 1 รายการ
 - Expected Status Code: `200`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงไทม์ไลน์ incident สำเร็จ",
+  "data": {
+    "timeline": [
+      {
+        "actionType": "INCIDENT_CREATED",
+        "actorType": "SYSTEM",
+        "description": "สร้าง incident ใหม่",
+        "changedAt": "..."
+      }
+    ]
+  }
+}
+```
 
 25. **Update Incident Status**
 - Method: `PATCH`
@@ -461,7 +787,18 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 }
 ```
 - Expected Status Code: `200`
-- Expected Response fields: `incidentId`, `status`, `updatedAt`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "อัปเดตสถานะ incident สำเร็จ",
+  "data": {
+    "incidentId": "...",
+    "status": "IN_PROGRESS",
+    "updatedAt": "..."
+  }
+}
+```
 
 26. **Assign Unit**
 - Method: `PATCH`
@@ -476,6 +813,18 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 }
 ```
 - Expected Status Code: `200`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "มอบหมายหน่วยงานสำเร็จ",
+  "data": {
+    "incidentId": "...",
+    "assignedUnitId": "...",
+    "assignedUnitName": "Facilities"
+  }
+}
+```
 
 27. **Update Priority (Severity)**
 - Method: `PATCH`
@@ -490,6 +839,17 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 }
 ```
 - Expected Status Code: `200`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "อัปเดต severity สำเร็จ",
+  "data": {
+    "incidentId": "...",
+    "severity": "HIGH"
+  }
+}
+```
 
 28. **Resolve Incident**
 - Method: `POST`
@@ -504,6 +864,17 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 }
 ```
 - Expected Status Code: `200`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ปิด incident สำเร็จ",
+  "data": {
+    "incidentId": "...",
+    "status": "RESOLVED"
+  }
+}
+```
 
 29. **Add Incident Comment**
 - Method: `POST`
@@ -517,6 +888,21 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 }
 ```
 - Expected Status Code: `201`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "เพิ่มความคิดเห็นสำเร็จ",
+  "data": {
+    "commentId": "...",
+    "incidentId": "...",
+    "authorName": "Somying Jaidee",
+    "comment": "รอทีมช่างเข้าพื้นที่",
+    "isInternal": true,
+    "createdAt": "..."
+  }
+}
+```
 
 30. **Fusion Explanation**
 - Method: `GET`
@@ -524,7 +910,22 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Role: Staff/Admin
 - Headers: `Authorization: Bearer {{staffAccessToken}}`
 - Expected Status Code: `200`
-- Expected Response fields: `matchRules`, `mergedReports`, `explanationText`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงเหตุผลการจัดกลุ่มสำเร็จ",
+  "data": {
+    "matchRules": {
+      "incidentTypeSimilarity": true,
+      "distanceMeters": 42.6,
+      "timeDifferenceMinutes": 18
+    },
+    "mergedReports": 3,
+    "explanationText": "..."
+  }
+}
+```
 
 31. **Scoring Explanation**
 - Method: `GET`
@@ -532,7 +933,23 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Role: Staff/Admin
 - Headers: `Authorization: Bearer {{staffAccessToken}}`
 - Expected Status Code: `200`
-- Expected Response fields: `incidentType`, `severity`, `severityReason`, `confidence`, `confidenceFactors`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงเหตุผลการประเมินสำเร็จ",
+  "data": {
+    "incidentType": "waste_issue",
+    "severity": "LOW",
+    "severityReason": "...",
+    "confidence": "LOW",
+    "confidenceFactors": [
+      { "factor": "HAS_IMAGE", "score": 1 },
+      { "factor": "MATCHING_LABEL", "score": 1 }
+    ]
+  }
+}
+```
 
 ### 7.9 Notifications
 32. **My Notifications**
@@ -541,8 +958,33 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Role: Staff/Admin
 - Headers: `Authorization: Bearer {{staffAccessToken}}`
 - Query Params: `page`, `pageSize`, `isRead`
+- วิธีทดสอบใน Postman: ลองทั้ง `isRead=true` และ `isRead=false`
 - Expected Status Code: `200`
-- Expected Response: paginated notifications
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงรายการแจ้งเตือนสำเร็จ",
+  "data": {
+    "items": [
+      {
+        "notificationId": "...",
+        "incidentId": "...",
+        "channel": "SYSTEM",
+        "title": "Test Alert",
+        "body": "Body of alert",
+        "isRead": false
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "pageSize": 20,
+      "totalItems": 1,
+      "totalPages": 1
+    }
+  }
+}
+```
 
 33. **Mark Notification as Read**
 - Method: `PATCH`
@@ -569,7 +1011,31 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Role: Admin
 - Headers: `Authorization: Bearer {{adminAccessToken}}`
 - Query Params: `page`, `pageSize`
+- วิธีทดสอบใน Postman: ยิงตรงหลัง login เป็น admin
 - Expected Status Code: `200`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงรายการหน่วยงานสำเร็จ",
+  "data": {
+    "items": [
+      {
+        "unitId": "...",
+        "code": "FAC",
+        "name": "Facilities",
+        "isActive": true
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "pageSize": 20,
+      "totalItems": 1,
+      "totalPages": 1
+    }
+  }
+}
+```
 
 35. **Create Unit**
 - Method: `POST`
@@ -585,6 +1051,20 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 }
 ```
 - Expected Status Code: `201`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "สร้างหน่วยงานสำเร็จ",
+  "data": {
+    "unitId": "...",
+    "code": "FAC",
+    "name": "Facilities",
+    "contactEmail": "facilities@tu.ac.th",
+    "isActive": true
+  }
+}
+```
 
 36. **Create Location**
 - Method: `POST`
@@ -601,13 +1081,48 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 }
 ```
 - Expected Status Code: `201`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "สร้าง location สำเร็จ",
+  "data": {
+    "locationId": "...",
+    "locationName": "หน้าตึก LC",
+    "buildingCode": "LC",
+    "lat": 14.072,
+    "lng": 100.601
+  }
+}
+```
 
 37. **List Routing Rules**
 - Method: `GET`
 - URL: `{{baseUrl}}/admin/routing-rules`
 - Role: Admin
 - Headers: `Authorization: Bearer {{adminAccessToken}}`
+- วิธีทดสอบใน Postman: ยิงหลังจากสร้าง routing rule แล้วจะเห็นรายการใน `items`
 - Expected Status Code: `200`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึงกฎ routing สำเร็จ",
+  "data": {
+    "items": [
+      {
+        "ruleId": "...",
+        "incidentType": "fire_smoke",
+        "severity": "HIGH",
+        "assignedUnitId": "...",
+        "assignedUnitName": "Security",
+        "priority": 1,
+        "isActive": true
+      }
+    ]
+  }
+}
+```
 
 38. **Create Routing Rule**
 - Method: `POST`
@@ -623,6 +1138,22 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 }
 ```
 - Expected Status Code: `201`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "สร้างกฎ routing สำเร็จ",
+  "data": {
+    "ruleId": "...",
+    "incidentType": "fire_smoke",
+    "severity": "HIGH",
+    "assignedUnitId": "...",
+    "assignedUnitName": "Security",
+    "priority": 1,
+    "isActive": true
+  }
+}
+```
 
 39. **Create Staff User**
 - Method: `POST`
@@ -640,6 +1171,20 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 }
 ```
 - Expected Status Code: `201`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "สร้างบัญชีเจ้าหน้าที่สำเร็จ",
+  "data": {
+    "userId": "...",
+    "fullName": "Somying Jaidee",
+    "email": "security2@tu.ac.th",
+    "role": "STAFF",
+    "unitId": "..."
+  }
+}
+```
 
 ### 7.11 Analytics
 40. **KPI Summary**
@@ -648,7 +1193,22 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Role: Staff/Admin
 - Headers: `Authorization: Bearer {{staffAccessToken}}`
 - Query Params: `dateFrom`, `dateTo`, `unitId`
+- วิธีทดสอบใน Postman: ใช้ช่วงวันที่กว้าง เช่น `2020-01-01` ถึง `2099-12-31`
 - Expected Status Code: `200`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึง KPI summary สำเร็จ",
+  "data": {
+    "totalReports": 1,
+    "totalIncidents": 1,
+    "fusionRate": 0,
+    "avgResponseMinutes": 0,
+    "resolvedRate": 0
+  }
+}
+```
 
 41. **Incident Type Distribution**
 - Method: `GET`
@@ -657,6 +1217,19 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Headers: `Authorization: Bearer {{staffAccessToken}}`
 - Query Params: `dateFrom`, `dateTo`
 - Expected Status Code: `200`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึง distribution สำเร็จ",
+  "data": [
+    {
+      "incidentType": "waste_issue",
+      "count": 1
+    }
+  ]
+}
+```
 
 42. **Hotspot Locations**
 - Method: `GET`
@@ -665,6 +1238,21 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Headers: `Authorization: Bearer {{staffAccessToken}}`
 - Query Params: `dateFrom`, `dateTo`, `limit`
 - Expected Status Code: `200`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึง hotspot สำเร็จ",
+  "data": [
+    {
+      "locationName": "หน้าตึก LC",
+      "incidentCount": 1,
+      "lat": 14.072,
+      "lng": 100.601
+    }
+  ]
+}
+```
 
 43. **Peak Time Analysis**
 - Method: `GET`
@@ -673,6 +1261,19 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Headers: `Authorization: Bearer {{staffAccessToken}}`
 - Query Params: `dateFrom`, `dateTo`, `groupBy` (`hour` หรือ `day`)
 - Expected Status Code: `200`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึง peak time สำเร็จ",
+  "data": [
+    {
+      "hour": 13,
+      "count": 1
+    }
+  ]
+}
+```
 - หมายเหตุ: ถ้า `groupBy` ไม่ใช่ `hour/day` จะได้ `400`
 
 44. **Fusion Statistics**
@@ -682,6 +1283,20 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Headers: `Authorization: Bearer {{staffAccessToken}}`
 - Query Params: `dateFrom`, `dateTo`
 - Expected Status Code: `200`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึง fusion statistics สำเร็จ",
+  "data": {
+    "totalReports": 1,
+    "totalIncidents": 1,
+    "mergedReports": 0,
+    "fusionRate": 0,
+    "avgReportsPerIncident": 1
+  }
+}
+```
 
 45. **Status Overview**
 - Method: `GET`
@@ -690,6 +1305,19 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Headers: `Authorization: Bearer {{staffAccessToken}}`
 - Query Params: `dateFrom`, `dateTo`
 - Expected Status Code: `200`
+- Expected Response ตัวอย่าง:
+```json
+{
+  "success": true,
+  "message": "ดึง status overview สำเร็จ",
+  "data": [
+    {
+      "status": "NEW",
+      "count": 1
+    }
+  ]
+}
+```
 
 ## 8. Endpoint ที่ยังไม่พร้อมใช้งานเต็มรูปแบบ
 1. `POST /reports/multipart`
