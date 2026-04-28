@@ -5,13 +5,17 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.models.notification import Notification
+from app.models.unit import Unit
 from app.models.user import User
 from app.schemas.notification import (
     NotificationItem,
     NotificationListResponseData,
     NotificationReadResponseData,
+    NotifyUnitRequest,
 )
 from app.schemas.public import PaginationMeta
+from app.services.sns_service import sns_service
+from app.core.config import settings
 
 
 class NotificationService:
@@ -98,3 +102,39 @@ class NotificationService:
             isRead=notif.is_read,
         )
         return data.model_dump()
+
+    @staticmethod
+    def notify_unit_via_sns(db: Session, payload: NotifyUnitRequest) -> dict:
+        unit = db.query(Unit).filter(Unit.name == payload.unitName).first()
+
+        if not unit:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Unit '{payload.unitName}' not found",
+            )
+
+        if not unit.sns_topic_arn:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unit '{unit.name}' does not have an SNS Topic configured",
+            )
+
+        frontend_link = settings.FRONTEND_URL
+
+        success = sns_service.publish_to_email_topic(
+            topic_arn=unit.sns_topic_arn,
+            subject=f"มีรายงานเหตุการณ์ใหม่ถึงหน่วยงาน: {unit.name}",
+            message=f"เรียน {unit.name},\n\nระบบ TU Pulse ได้รับแจ้งเหตุการณ์ใหม่ที่เกี่ยวข้องกับหน่วยงานของคุณ\n\nกรุณาเข้าสู่ระบบเพื่อตรวจสอบรายละเอียดเพิ่มเติมที่คลิก: {frontend_link}\n\nขอบคุณครับ\nทีมงาน TU Pulse"
+        )
+
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to publish message to SNS",
+            )
+
+        return {
+            "success": True,
+            "message": f"Successfully sent SNS notification to unit '{unit.name}'",
+            "contact_email": unit.contact_email
+        }

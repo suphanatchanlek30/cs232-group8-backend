@@ -8,6 +8,7 @@ from app.db.session import get_db
 from app.schemas.common import ApiResponse
 from app.schemas.report import CreateReportRequest
 from app.services.report_service import ReportService
+from app.services.s3_service import s3_service
 
 router = APIRouter()
 
@@ -40,8 +41,12 @@ def create_report_multipart(
     user=Depends(get_current_reporter),
     db: Session = Depends(get_db),
 ):
-    # For prototype: store file names as URLs (real impl would upload to S3)
-    image_urls = [f"/uploads/{img.filename}" for img in images if img.filename]
+    attachments_data = []
+    for img in images:
+        if img.filename:
+            s3_data = s3_service.upload_file(img, str(user.id))
+            if s3_data:
+                attachments_data.append(s3_data)
 
     data = ReportService.create_report_multipart(
         db=db,
@@ -54,7 +59,7 @@ def create_report_multipart(
         location_note=locationNote,
         lat=lat,
         lng=lng,
-        image_urls=image_urls,
+        attachments_data=attachments_data,
     )
     return ApiResponse(
         success=True,
@@ -91,5 +96,18 @@ def get_report_detail(
     return ApiResponse(
         success=True,
         message="ดึงรายละเอียดรายงานสำเร็จ",
+        data=data,
+    )
+
+@router.get("/{reportId}/images", response_model=ApiResponse)
+def get_report_image_urls(
+    reportId: str,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    data = ReportService.get_report_images(db, reportId, user)
+    return ApiResponse(
+        success=True,
+        message="ดึงรูปภาพของรายงานสำเร็จ",
         data=data,
     )

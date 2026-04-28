@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_staff
 from app.db.session import get_db
 from app.schemas.common import ApiResponse
+from app.schemas.notification import NotifyUnitRequest
 from app.services.notification_service import NotificationService
 
 router = APIRouter()
@@ -37,5 +38,18 @@ def mark_notification_read(
     return ApiResponse(
         success=True,
         message="อ่านแจ้งเตือนแล้ว",
+        data=data,
+    )
+
+@router.post("/notify-unit", response_model=ApiResponse)
+def notify_unit(
+    payload: NotifyUnitRequest,
+    user=Depends(get_current_staff),
+    db: Session = Depends(get_db),
+):
+    data = NotificationService.notify_unit_via_sns(db, payload)
+    return ApiResponse(
+        success=True,
+        message="ดำเนินการส่งอีเมลผ่าน SNS สำเร็จ",
         data=data,
     )

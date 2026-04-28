@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,9 +24,14 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     LINE_VERIFY_MODE: str = "mock"
-    LINE_CHANNEL_ID: str | None = None
-    LINE_CHANNEL_SECRET: str | None = None
-    LINE_LIFF_ID: str | None = None
+    LINE_CHANNEL_ID: Optional[str] = None
+    LINE_CHANNEL_SECRET: Optional[str] = None
+    LINE_LIFF_ID: Optional[str] = None
+
+    S3_BUCKET_NAME: Optional[str] = None
+    AWS_REGION: str = "us-east-1"
+    
+    FRONTEND_URL: str = "http://localhost:3000"
 
     CORS_ALLOW_ORIGINS: str = "*"
 

@@ -24,3 +24,6 @@ class NotificationListResponseData(BaseModel):
 class NotificationReadResponseData(BaseModel):
     notificationId: str
     isRead: bool
+
+class NotifyUnitRequest(BaseModel):
+    unitName: str

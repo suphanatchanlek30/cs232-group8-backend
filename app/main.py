@@ -45,3 +45,12 @@ def root():
             "env": settings.APP_ENV,
         },
     }
+
+# ==========================================
+# For AWS Lambda (Serverless Deployment)
+# ==========================================
+try:
+    from mangum import Mangum
+    handler = Mangum(app, lifespan="off")
+except ImportError:
+    pass

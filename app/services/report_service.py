@@ -227,9 +227,9 @@ class ReportService:
         location_note: str | None,
         lat: float | None,
         lng: float | None,
-        image_urls: list[str],
+        attachments_data: list[dict],
     ) -> dict:
-        """Simplified multipart endpoint — stores image URLs directly."""
+        """Simplified multipart endpoint — stores images directly to S3."""
         tracking_code = _generate_tracking_code()
 
         report = Report(
@@ -251,12 +251,14 @@ class ReportService:
         db.add(report)
         db.flush()
 
-        for idx, url in enumerate(image_urls):
+        for data in attachments_data:
             db.add(ReportAttachment(
                 report_id=report.id,
-                file_key=f"multipart/{report.id}/{idx}",
-                file_url=url,
-                file_type="IMAGE",
+                file_key=data["file_key"],
+                file_url=data["file_url"],
+                file_type=data["file_type"],
+                mime_type=data.get("mime_type"),
+                file_size_bytes=data.get("file_size_bytes"),
             ))
 
         if label:
@@ -350,6 +352,32 @@ class ReportService:
             isAnonymous=report.is_anonymous,
         )
         return data.model_dump()
+
+    @staticmethod
+    def get_report_images(db: Session, report_id: str, user: User) -> list[str]:
+        report = db.query(Report).filter(Report.id == report_id).first()
+        if not report:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Report not found",
+            )
+
+        # access control: reporter owner OR staff/admin
+        is_owner = report.reporter_user_id == user.id
+        is_staff = user.role in ("STAFF", "ADMIN")
+        if not is_owner and not is_staff:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied",
+            )
+
+        attachments = (
+            db.query(ReportAttachment)
+            .filter(ReportAttachment.report_id == report.id)
+            .filter(ReportAttachment.file_type == "IMAGE")
+            .all()
+        )
+        return [a.file_url for a in attachments]
 
     # ------------------------------------------------------------ my reports
     @staticmethod

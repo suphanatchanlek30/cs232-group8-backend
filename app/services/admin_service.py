@@ -22,6 +22,7 @@ from app.schemas.admin import (
     UnitListResponseData,
 )
 from app.schemas.public import PaginationMeta
+from app.services.sns_service import sns_service
 
 
 class AdminService:
@@ -74,6 +75,13 @@ class AdminService:
             contact_email=payload.email,
             is_active=True,
         )
+
+        # Automate SNS Topic Creation
+        if unit.contact_email:
+            topic_arn = sns_service.create_topic_and_subscribe(unit.name, unit.contact_email)
+            if topic_arn:
+                unit.sns_topic_arn = topic_arn
+
         db.add(unit)
         db.commit()
         db.refresh(unit)

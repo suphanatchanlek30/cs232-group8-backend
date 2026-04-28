@@ -35,3 +35,7 @@ htmlcov/
 build/
 dist/
 *.egg-info/
+my_lambda_api.zip
+package/
+app/services/s3_service.py
+app/services/sns_service.py
